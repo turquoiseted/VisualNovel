@@ -1,0 +1,19 @@
+--
+~~~~~~~~~~~~~~~~~~~~~
+This file is where I can put any plans i have for formatting the game functions, possible features, etc.
+
+Save Files
+
+Menu
+
+Character stats
+
+Main Gameplay.
+
+- require a input parsers that returns a class which is used to display the screen.
+
+The class should contian the line of dialouge, the speaking character, and the characters currently on screen.
+
+- this information should be put in the script that is read in by the input parser
+
+- the next screen should be displayed on click

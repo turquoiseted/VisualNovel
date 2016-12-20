@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/../../../core/build/classes/test"/>
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$/../../../core">
+		<testFolder url="file://$MODULE_DIR$/../../../core/src/test/java"/>
+		<testFolder url="file://$MODULE_DIR$/../../../core/src/test/resources"/>
+		<excludeFolder url="file://$MODULE_DIR$/../../../core/.gradle"/>
+		<excludeFolder url="file://$MODULE_DIR$/../../../core/build"/>
+	</contentEntry>
+	<levels>
+		<level name="Gradle: com.badlogicgames.gdx:gdx:1.9.4" value="project"/>
+		<level name="Gradle: com.badlogicgames.gdx:gdx-controllers:1.9.4" value="project"/>
+		<level name="Gradle: com.badlogicgames.gdx:gdx-ai:1.8.0" value="project"/>
+		<level name="Gradle: com.badlogicgames.box2dlights:box2dlights:1.4" value="project"/>
+		<level name="Gradle: com.badlogicgames.ashley:ashley:1.7.0" value="project"/>
+		<level name="Gradle: com.badlogicgames.gdx:gdx-freetype:1.9.4" value="project"/>
+		<level name="Gradle: com.badlogicgames.gdx:gdx-box2d:1.9.4" value="project"/>
+	</levels>
+</component>
