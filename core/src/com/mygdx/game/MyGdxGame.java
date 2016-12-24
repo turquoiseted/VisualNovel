@@ -10,50 +10,81 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.BooleanArray;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import java.awt.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
+import java.sql.Time;
 import java.util.ArrayList;
 
 public class MyGdxGame extends ApplicationAdapter {
+	// GDX Variables
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
+	private BitmapFont font;
+
 	// Music
 	private Music rainMusic;
 	// Images
 	private Texture textboxImage;
 	private Texture dateboxImage;
 	private Texture leoStandImage;
+	private Texture SavLoadImage;
 	private Texture menuImage;
 
 	// Temp
 	private Rectangle bucket;
 	private Rectangle menu;
 
-	// uhh
+	// Booleans
 	private Boolean MouseRight;
-	private Long MenuAccessed;
-	private BitmapFont font;
+	private Boolean MouseLeft;
 
+
+	private Float TimeScroller;
+
+	// Variables for text management
+	private String DisplayText;
 	private CharSequence text;
 	private ArrayList<CharSequence> LinesOfText;
-
-	private String filename = "C:\\Users\\Dmitri\\Documents\\The actual Worst\\core\\assets\\dialogue.txt";
 	private int DialogueLine;
 
+	// Checks for displays
+	boolean DisplaySave = false;
+	boolean DisplayLoad = false;
+	boolean DisplayStats = false;
+
+	// Bound for menu positions
+	float SaveTestX = 0;
+	float SaveTestY = 0;
+	// Refactor to a rectangle lmao
+	int SaveUpperX = 1024;
+	int SaveLowerX = 786;
+	int SaveUpperY = 640;
+	int SaveLowerY = 500;
+
+	int LoadUpperX = 1024;
+	int LoadLowerX = 786;
+	int LoadUpperY = 500;
+	int LoadLowerY = 400;
+
+
+	// Class that deals with input script
 	public class DialogueParser {
 		// Text
 		private CharSequence content;
 		private ArrayList<CharSequence> lines;
 		private CharSequence TempLines;
 		private File dialogue;
-		private int counter;
 		private String test;
 
+		// Reads in from file
 		public CharSequence readFile(String filename) {
 			dialogue = new File(filename);
 			FileReader reader = null;
@@ -76,18 +107,19 @@ public class MyGdxGame extends ApplicationAdapter {
 			}
 			return content;
 		}
-		// This is my last resort, splits shit into arrays of shit
+
+		// Split my string into pieces, this is my last resort
 		public ArrayList<CharSequence> parseFile(CharSequence script) {
 			TempLines = "";
-			lines = new ArrayList<CharSequence>();
-			for (counter = 0; counter < script.length(); counter = counter + 1) {
+			lines = new ArrayList<>();
+			for (int counter = 0; counter < script.length(); counter++) {
 				// Makes a string of the current 2 characters
 				test = "" + script.charAt(counter) + script.charAt(counter + 1);
 
 				if ((test.equals("\r\n")) || (counter == script.length())) {
 					lines.add(TempLines);
 					TempLines = "";
-					counter = counter + 1;
+					counter ++;
 
 				} else {
 					TempLines = "" + TempLines + script.charAt(counter);
@@ -100,28 +132,33 @@ public class MyGdxGame extends ApplicationAdapter {
 
 	@Override
 	public void create () {
-		//text???
+		// Set the base value for Variables
+		MouseLeft = Boolean.TRUE;
+		MouseRight = Boolean.FALSE;
+		TimeScroller = 0.0f;
 		DialogueLine = 0;
+
 		// font = new BitmapFont();
 		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/basis33.ttf"));
 		FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 		parameter.size = 32;
 		parameter.color = (Color.BLACK);
-		font = generator.generateFont(parameter); // font size 12 pixels
-		generator.dispose(); // don't forget to dispose to avoid memory leaks!
+		// font size 12 pixels
+		font = generator.generateFont(parameter);
+		// don't forget to dispose to avoid memory leaks!
+		generator.dispose();
 
 
-		// Stop continous Rendering
+		batch = new SpriteBatch();
+
+		// Stop continuous Rendering
 		Gdx.graphics.setContinuousRendering(false);
 		Gdx.graphics.requestRendering();
 
-		// Set any variables that need setting
-		MenuAccessed = TimeUtils.nanoTime();
-
+		// Sets up for text input
+		String filename = "C:\\Users\\Dmitri\\Documents\\The actual Worst\\core\\assets\\dialogue.txt";
 		text = new DialogueParser().readFile(filename);
 		LinesOfText = new DialogueParser().parseFile(text);
-
-		batch = new SpriteBatch();
 
 		// Camera
 		camera = new OrthographicCamera();
@@ -131,6 +168,7 @@ public class MyGdxGame extends ApplicationAdapter {
 		textboxImage = new Texture(Gdx.files.internal("Interface.png"));
 		dateboxImage = new Texture(Gdx.files.internal("interface_date.png"));
 		menuImage = new Texture(Gdx.files.internal("interface_menu.png"));
+		SavLoadImage = new Texture(Gdx.files.internal("interface_save_load.png"));
 		leoStandImage = new Texture(Gdx.files.internal("leo_stand.png"));
 
 		// Load Audio
@@ -153,17 +191,18 @@ public class MyGdxGame extends ApplicationAdapter {
 		menu.x = 786;
 		menu.y = 0;
 
-
 	}
 
 
 	@Override
 	public void render () {
+		// Set Background colour as white
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		camera.update();
 
 		batch.setProjectionMatrix(camera.combined);
+
 		batch.begin();
 		batch.draw(leoStandImage, bucket.x, bucket.y);
 
@@ -171,12 +210,39 @@ public class MyGdxGame extends ApplicationAdapter {
 		batch.draw(dateboxImage, 0, 470);
 		batch.draw(textboxImage, 0, 0);
 
-		// Code for Left Click to progress the game
-		if((Gdx.input.isButtonPressed(Input.Buttons.LEFT)) && (DialogueLine != (LinesOfText.size()-1) ) ) {
+		// Code for Left Click to progress dialogue
+		if((Gdx.input.isButtonPressed(Input.Buttons.LEFT)) && (DialogueLine != (LinesOfText.size()-1)) && (MouseRight == Boolean.FALSE) ) {
+			DisplayText = "";
 			DialogueLine = DialogueLine + 1;
+			MouseLeft = Boolean.TRUE;
+			TimeScroller = 0.0f;
 		}
 
-		font.draw(batch, LinesOfText.get(DialogueLine), 60, 100);
+		// Add Scrolling to text or not sfuccckkkk fix this later
+		 if (MouseLeft) {
+			for (int counter = 0; counter < LinesOfText.get(DialogueLine).length(); counter++) {
+				TimeScroller += Gdx.graphics.getDeltaTime();
+
+
+				if (TimeScroller > 999f) {
+					System.out.println(DisplayText);
+
+					DisplayText = DisplayText + LinesOfText.get(DialogueLine).charAt(counter);
+					font.draw(batch, DisplayText, 60, 100);
+					TimeScroller = 0.0f;
+
+				} else {
+					if (counter != (LinesOfText.get(DialogueLine).length() - 1)) {
+						counter--;
+					} else  {
+						MouseLeft = Boolean.FALSE;
+					}
+				}
+			}
+		}
+		if (MouseLeft == Boolean.FALSE) {
+			font.draw(batch, LinesOfText.get(DialogueLine), 60, 100);
+		}
 
 		// Code for right click to display a menu
 
@@ -185,23 +251,55 @@ public class MyGdxGame extends ApplicationAdapter {
 				MouseRight = Boolean.FALSE;
 			} else {
 				MouseRight = Boolean.TRUE;
-				MenuAccessed = TimeUtils.nanoTime();
 			}
 		}
 
+		// Draw the right click menu and poll for input
 		if(MouseRight == Boolean.TRUE) {
 			batch.draw(menuImage, menu.x, menu.y);
+			font.draw(batch, "Save", 870, 600);
+			font.draw(batch, "Load", 870, 500);
+			font.draw(batch, "Stats", 860, 400);
+			font.draw(batch, "Menu", 870, 70);
+
+			// Check if a "button" is clicked on
+			if(Gdx.input.isTouched()) {
+				Vector3 touchPos = new Vector3();
+				touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
+				camera.unproject(touchPos);
+				SaveTestX = touchPos.x - 64 / 2;
+				SaveTestY = touchPos.y - 64 / 2;
+				if ((SaveLowerX < SaveTestX)&&(SaveTestX < SaveUpperX)&&(SaveLowerY < SaveTestY)&&(SaveTestY < SaveUpperY)){
+					System.out.print("save");
+					DisplaySave = true;
+				} else {
+					if ((LoadLowerX < SaveTestX)&&(SaveTestX < LoadUpperX)&&(LoadLowerY < SaveTestY)&&(SaveTestY < LoadUpperY)) {
+						System.out.print("load");
+						DisplayLoad = true;
+					}
+				}
+			}
+
+		}
+		if (DisplaySave) {
+			batch.draw(SavLoadImage, 0, 0);
+			font.draw(batch, "SAVE", 500, 500);
+			if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)){
+				DisplaySave = false;
+			}
+		}
+		if (DisplayLoad) {
+			batch.draw(SavLoadImage, 0, 0);
+			font.draw(batch, "LOAD", 500, 500);
+			if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)){
+				DisplayLoad = false;
+			}
 		}
 
 
 		batch.end();
-		// Code for item movement
-		/*if(Gdx.input.isTouched()) {
-			Vector3 touchPos = new Vector3();
-			touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-			camera.unproject(touchPos);
-			bucket.x = (int) (touchPos.x - (64 / 2));
-		}*/
+
+		//This is useless, like me
 		if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) bucket.x -= 200 * Gdx.graphics.getDeltaTime();
 		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) bucket.x += 200 * Gdx.graphics.getDeltaTime();
 
